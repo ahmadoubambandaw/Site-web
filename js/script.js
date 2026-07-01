@@ -1,21 +1,23 @@
 'use strict';
 
+const WHATSAPP_NUMBER = '221781338213';
+
 /* ============================================================
    DONNÉES PRODUITS
    ============================================================ */
 const PRODUCTS = [
-  { id: 1, name: 'Derby Cuir Milano', category: 'chaussures', price: 65000, oldPrice: 78000, icon: 'icon-shoe', badge: 'Best-seller', rating: 5 },
-  { id: 2, name: 'Mocassin Firenze', category: 'chaussures', price: 58000, oldPrice: null, icon: 'icon-shoe', badge: null, rating: 4 },
-  { id: 3, name: 'Richelieu Napoli', category: 'chaussures', price: 72000, oldPrice: null, icon: 'icon-shoe', badge: 'Nouveau', rating: 5 },
-  { id: 4, name: 'Sandale Amalfi', category: 'sandales', price: 32000, oldPrice: 38000, icon: 'icon-sandal', badge: 'Promo', rating: 4 },
-  { id: 5, name: 'Sandale Positano', category: 'sandales', price: 29000, oldPrice: null, icon: 'icon-sandal', badge: null, rating: 5 },
-  { id: 6, name: 'Lunettes Roma Solaire', category: 'lunettes', price: 24000, oldPrice: null, icon: 'icon-glasses', badge: 'Nouveau', rating: 5 },
-  { id: 7, name: 'Lunettes Venezia', category: 'lunettes', price: 21000, oldPrice: 27000, icon: 'icon-glasses', badge: 'Promo', rating: 4 },
-  { id: 8, name: 'Bracelet Cuir Torino', category: 'bracelets', price: 15000, oldPrice: null, icon: 'icon-bracelet', badge: null, rating: 5 },
-  { id: 9, name: 'Bracelet Acier Verona', category: 'bracelets', price: 18000, oldPrice: null, icon: 'icon-bracelet', badge: 'Best-seller', rating: 4 },
-  { id: 10, name: 'Ceinture Cuir Siena', category: 'accessoires', price: 22000, oldPrice: null, icon: 'icon-belt', badge: null, rating: 5 },
-  { id: 11, name: 'Sac Portefeuille Como', category: 'accessoires', price: 27000, oldPrice: 33000, icon: 'icon-bag', badge: 'Promo', rating: 4 },
-  { id: 12, name: 'Derby Cuir Bologna', category: 'chaussures', price: 68000, oldPrice: null, icon: 'icon-shoe', badge: null, rating: 5 },
+  { id: 1, name: 'Polo Lacoste Classique', category: 'polos', price: 10000, oldPrice: null, icon: 'icon-polo', badge: 'Best-seller', rating: 5 },
+  { id: 2, name: 'Polo Lacoste Piqué', category: 'polos', price: 12000, oldPrice: null, icon: 'icon-polo', badge: 'Nouveau', rating: 5 },
+  { id: 3, name: 'Polo Lacoste Manches Longues', category: 'polos', price: 15000, oldPrice: null, icon: 'icon-polo', badge: null, rating: 4 },
+  { id: 4, name: 'Chemise Habillée Blanche', category: 'chemises', price: 12000, oldPrice: null, icon: 'icon-shirt', badge: null, rating: 5 },
+  { id: 5, name: 'Chemise Slim Imprimée', category: 'chemises', price: 13000, oldPrice: null, icon: 'icon-shirt', badge: 'Nouveau', rating: 4 },
+  { id: 6, name: 'Chemise Lin Été', category: 'chemises', price: 11000, oldPrice: 14000, icon: 'icon-shirt', badge: 'Promo', rating: 5 },
+  { id: 7, name: 'Ensemble Prêt-à-Porter Chic', category: 'ensembles', price: 25000, oldPrice: null, icon: 'icon-outfit', badge: 'Best-seller', rating: 5 },
+  { id: 8, name: 'Ensemble Sport Deux-Pièces', category: 'ensembles', price: 20000, oldPrice: null, icon: 'icon-outfit', badge: null, rating: 4 },
+  { id: 9, name: 'Blazer Ville', category: 'ensembles', price: 35000, oldPrice: null, icon: 'icon-outfit', badge: null, rating: 5 },
+  { id: 10, name: 'Montre Classique Cuir', category: 'montres', price: 18000, oldPrice: null, icon: 'icon-watch', badge: null, rating: 5 },
+  { id: 11, name: 'Montre Acier Sport', category: 'montres', price: 22000, oldPrice: 27000, icon: 'icon-watch', badge: 'Promo', rating: 4 },
+  { id: 12, name: 'Casquette & Ceinture Set', category: 'accessoires', price: 8000, oldPrice: null, icon: 'icon-cap', badge: null, rating: 4 },
 ];
 
 const money = (n) => n.toLocaleString('fr-FR').replace(/,/g, ' ') + ' FCFA';
@@ -67,7 +69,7 @@ filterBtns.forEach(btn => {
 
 // Liens catégories / footer qui pointent vers un filtre précis
 document.querySelectorAll('[data-filter]:not(.filter-btn)').forEach(link => {
-  link.addEventListener('click', (e) => {
+  link.addEventListener('click', () => {
     const filter = link.dataset.filter;
     if (!filter) return;
     setTimeout(() => applyFilter(filter), 300);
@@ -169,8 +171,8 @@ cartCheckout.addEventListener('click', (e) => {
   }
   const lines = cart.map(i => `- ${i.name} x${i.qty} : ${money(i.price * i.qty)}`).join('\n');
   const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const message = `Bonjour 6point9, je souhaite commander :\n${lines}\n\nTotal : ${money(total)}`;
-  cartCheckout.href = `https://wa.me/221771234569?text=${encodeURIComponent(message)}`;
+  const message = `Bonjour Fadia Shop, je souhaite commander :\n${lines}\n\nTotal : ${money(total)}`;
+  cartCheckout.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 });
 
 /* ============================================================
@@ -209,51 +211,73 @@ document.querySelectorAll('.nav-link').forEach(link => {
 });
 
 /* ============================================================
-   TÉMOIGNAGES — SLIDER
+   PARTAGER / ENREGISTRER (fiche établissement)
    ============================================================ */
-const testiTrack = document.getElementById('testiTrack');
-const testiCards = document.querySelectorAll('.testi-card');
-const testiDotsEl = document.getElementById('testiDots');
-const testiPrev = document.getElementById('testiPrev');
-const testiNext = document.getElementById('testiNext');
-let testiIndex = 0;
+const shareBtn = document.getElementById('shareBtn');
+const shareToast = document.getElementById('shareToast');
+const saveBtn = document.getElementById('saveBtn');
 
-testiCards.forEach((_, i) => {
-  const dot = document.createElement('span');
-  if (i === 0) dot.classList.add('active');
-  dot.addEventListener('click', () => goToTesti(i));
-  testiDotsEl.appendChild(dot);
+shareBtn.addEventListener('click', async () => {
+  const shareData = {
+    title: 'Showroom Fadia Shop — Keur Massar',
+    text: 'Showroom Fadia Shop : polos, chemises, ensembles et montres pour homme à Keur Massar.',
+    url: window.location.href,
+  };
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
+      return;
+    }
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+  }
+  try {
+    await navigator.clipboard.writeText(window.location.href);
+    shareToast.classList.add('show');
+    setTimeout(() => shareToast.classList.remove('show'), 2500);
+  } catch (err) {
+    // Presse-papier indisponible : rien à faire de plus côté navigateur.
+  }
 });
 
-function goToTesti(i) {
-  testiIndex = (i + testiCards.length) % testiCards.length;
-  testiTrack.style.transform = `translateX(-${testiIndex * 100}%)`;
-  document.querySelectorAll('.testi-dots span').forEach((d, idx) => {
-    d.classList.toggle('active', idx === testiIndex);
-  });
+const SAVE_KEY = 'fadiaShop.saved';
+if (localStorage.getItem(SAVE_KEY) === '1') saveBtn.classList.add('saved');
+
+saveBtn.addEventListener('click', () => {
+  const isSaved = saveBtn.classList.toggle('saved');
+  localStorage.setItem(SAVE_KEY, isSaved ? '1' : '0');
+  saveBtn.querySelector('span:last-child').textContent = isSaved ? 'Enregistré' : 'Enregistrer';
+});
+if (saveBtn.classList.contains('saved')) {
+  saveBtn.querySelector('span:last-child').textContent = 'Enregistré';
 }
 
-testiPrev.addEventListener('click', () => goToTesti(testiIndex - 1));
-testiNext.addEventListener('click', () => goToTesti(testiIndex + 1));
-
-let testiAuto = setInterval(() => goToTesti(testiIndex + 1), 6000);
-testiTrack.addEventListener('mouseenter', () => clearInterval(testiAuto));
-testiTrack.addEventListener('mouseleave', () => {
-  testiAuto = setInterval(() => goToTesti(testiIndex + 1), 6000);
-});
-
 /* ============================================================
-   NEWSLETTER
+   ONGLETS (Présentation / Avis / Photos) — scrollspy
    ============================================================ */
-const newsletterForm = document.getElementById('newsletterForm');
-const newsletterSuccess = document.getElementById('newsletterSuccess');
+const tabs = document.querySelectorAll('.tab');
+const tabSections = ['presentation', 'avis', 'photos']
+  .map(id => document.getElementById(id))
+  .filter(Boolean);
 
-newsletterForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  newsletterSuccess.classList.add('show');
-  newsletterForm.reset();
-  setTimeout(() => newsletterSuccess.classList.remove('show'), 4000);
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
 });
+
+function updateActiveTab() {
+  const triggerY = window.scrollY + 160;
+  let currentId = tabSections[0] && tabSections[0].id;
+  tabSections.forEach(section => {
+    if (section.offsetTop <= triggerY) currentId = section.id;
+  });
+  tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === currentId));
+}
+
+window.addEventListener('scroll', updateActiveTab);
+updateActiveTab();
 
 /* ============================================================
    SCROLL : header, back-to-top, reveal
