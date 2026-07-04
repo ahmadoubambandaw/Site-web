@@ -1,0 +1,580 @@
+<title>ViralCut ⚽ — Montage TikTok automatique</title>
+<style>
+  :root {
+    --ground: #0b1210;
+    --card: #121b17;
+    --card-2: #17231d;
+    --line: #24312a;
+    --text: #e9f1eb;
+    --muted: #96a69b;
+    --accent: #45e07c;
+    --accent-deep: #128a44;
+    --accent-ink: #06130b;
+    --warn: #e0b145;
+    --danger: #ef6a6a;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground: #eef3ec;
+      --card: #ffffff;
+      --card-2: #f3f7f2;
+      --line: #d5e0d4;
+      --text: #17231c;
+      --muted: #5d6f63;
+      --accent: #128a44;
+      --accent-deep: #0c6b35;
+      --accent-ink: #ffffff;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #eef3ec; --card: #ffffff; --card-2: #f3f7f2; --line: #d5e0d4;
+    --text: #17231c; --muted: #5d6f63; --accent: #128a44;
+    --accent-deep: #0c6b35; --accent-ink: #ffffff;
+  }
+  :root[data-theme="dark"] {
+    --ground: #0b1210; --card: #121b17; --card-2: #17231d; --line: #24312a;
+    --text: #e9f1eb; --muted: #96a69b; --accent: #45e07c;
+    --accent-deep: #128a44; --accent-ink: #06130b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1100px 500px at 85% -10%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 60%),
+      var(--ground);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
+  .wordmark {
+    font-size: clamp(30px, 5vw, 42px); font-weight: 900;
+    letter-spacing: -0.03em; margin: 0;
+  }
+  .wordmark em { font-style: normal; color: var(--accent); }
+  .tag {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .lede { color: var(--muted); max-width: 62ch; margin: 4px 0 26px; }
+  .lede strong { color: var(--text); }
+
+  .grid { display: grid; grid-template-columns: 1fr 340px; gap: 22px; align-items: start; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 20px;
+  }
+  .step { display: flex; flex-direction: column; gap: 14px; }
+  .step + .step { margin-top: 16px; }
+  .step-label {
+    font-size: 12px; font-weight: 800; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent);
+  }
+
+  .drop {
+    border: 2px dashed var(--line); border-radius: 12px;
+    padding: 26px 18px; text-align: center; cursor: pointer;
+    background: var(--card-2); transition: border-color .15s, background .15s;
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); }
+  .drop strong { font-size: 17px; }
+  .drop p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+  .drop .picked { color: var(--accent); font-weight: 700; margin-top: 8px; word-break: break-all; }
+
+  label.field { display: block; font-size: 13px; color: var(--muted); }
+  label.field span { display: block; margin-bottom: 5px; font-weight: 600; }
+  input[type="text"], input[type="number"], select {
+    width: 100%; padding: 11px 12px; border-radius: 9px;
+    border: 1px solid var(--line); background: var(--card-2);
+    color: var(--text); font-size: 15px; font-family: inherit;
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+  .row { display: flex; gap: 12px; }
+  .row > * { flex: 1; }
+  .check { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--text); cursor: pointer; }
+  .check input { width: 17px; height: 17px; accent-color: var(--accent); }
+
+  button.go {
+    width: 100%; padding: 15px; border: none; border-radius: 11px;
+    background: var(--accent); color: var(--accent-ink);
+    font-size: 17px; font-weight: 800; letter-spacing: 0.01em;
+    cursor: pointer; font-family: inherit;
+  }
+  button.go:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, var(--text)); }
+  button.go:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+  button.go:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ----- colonne droite : téléphone + statut ----- */
+  .phone {
+    aspect-ratio: 9 / 16; border-radius: 22px; overflow: hidden;
+    border: 1px solid var(--line); background: #05080a;
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .phone canvas, .phone video { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .phone .idle {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+    color: #8ba394; font-size: 13px; text-align: center; padding: 20px;
+  }
+  .phone .idle .ball { font-size: 40px; }
+
+  .status { margin-top: 14px; font-size: 14px; min-height: 22px; }
+  .status.error { color: var(--danger); }
+  .meter {
+    height: 7px; border-radius: 5px; background: var(--card-2);
+    border: 1px solid var(--line); overflow: hidden; margin-top: 9px;
+  }
+  .meter i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width .3s; }
+  .timing { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .segs { margin: 10px 0 0; padding: 0; list-style: none; font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--muted); }
+  .segs li { padding: 3px 0; border-bottom: 1px dashed var(--line); display: flex; justify-content: space-between; }
+  .segs li b { color: var(--accent); font-weight: 600; }
+
+  a.dl {
+    display: block; text-align: center; margin-top: 12px; padding: 13px;
+    background: var(--accent); color: var(--accent-ink); font-weight: 800;
+    border-radius: 10px; text-decoration: none;
+  }
+  a.dl:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+
+  .notes { margin-top: 22px; display: grid; gap: 10px; }
+  .note {
+    font-size: 13px; color: var(--muted); border-left: 3px solid var(--line);
+    padding: 2px 0 2px 12px;
+  }
+  .note.privacy { border-left-color: var(--accent); }
+  .note.rights { border-left-color: var(--warn); }
+  .note b { color: var(--text); }
+
+  @media (prefers-reduced-motion: reduce) { .meter i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1 class="wordmark">Viral<em>Cut</em></h1>
+    <span class="tag">Montage TikTok · Football</span>
+  </header>
+  <p class="lede">Dépose ta vidéo brute (match, gameplay, entraînement) : ViralCut repère
+  les <strong>temps forts au son</strong> — buts, cris, ambiance — puis fabrique un
+  <strong>montage vertical 9:16</strong> avec accroche, sous tes yeux. Tout se passe
+  <strong>dans ton navigateur</strong> : la vidéo ne quitte pas ton appareil.</p>
+
+  <div class="grid">
+    <section class="card" aria-label="Réglages">
+      <div class="step">
+        <div class="step-label">1 · Ta vidéo</div>
+        <div class="drop" id="drop" role="button" tabindex="0" aria-label="Choisir une vidéo">
+          <strong>Glisse ta vidéo ici</strong>
+          <p>ou clique pour choisir — mp4, mov, webm (idéal &lt; 300 Mo)</p>
+          <div class="picked" id="picked"></div>
+          <input type="file" id="file" accept="video/*" hidden>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-label">2 · Habillage</div>
+        <label class="field"><span>Texte d'accroche (3 premières secondes)</span>
+          <input type="text" id="hook" maxlength="90" placeholder="CE BUT A CHOQUÉ TOUT LE STADE">
+          <div class="hint">Utilise | pour un saut de ligne.</div>
+        </label>
+        <div class="row">
+          <label class="field"><span>Ton @pseudo</span>
+            <input type="text" id="handle" maxlength="30" placeholder="@tonpseudo">
+          </label>
+          <label class="field"><span>Durée cible (s)</span>
+            <input type="number" id="duration" value="25" min="8" max="90">
+          </label>
+        </div>
+        <div class="row">
+          <label class="field"><span>Qualité</span>
+            <select id="quality">
+              <option value="720">HD 720×1280 (rapide)</option>
+              <option value="1080">Full HD 1080×1920</option>
+            </select>
+          </label>
+          <label class="check" style="align-self:end; padding-bottom:10px;">
+            <input type="checkbox" id="zoom" checked> Punch zoom
+          </label>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-label">3 · Montage</div>
+        <button class="go" id="go">Créer mon montage viral</button>
+      </div>
+
+      <div class="notes">
+        <div class="note privacy"><b>100 % local.</b> L'analyse et le montage tournent dans ton
+        navigateur — rien n'est envoyé sur un serveur.</div>
+        <div class="note rights"><b>Droits d'auteur :</b> les extraits de matchs officiels
+        (Ligue 1, LDC…) sont protégés. Utilise tes propres images (gameplay, matchs amateurs,
+        face-cam) pour éviter les retraits TikTok.</div>
+        <div class="note">Le rendu se fait en temps réel : un montage de 25 s prend ~25 s.
+        Garde l'onglet au premier plan pendant le montage. Navigateur conseillé : Chrome.</div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="phone" id="phone">
+        <div class="idle" id="idle">
+          <div class="ball" aria-hidden="true">⚽</div>
+          <div>Le montage s'affichera ici,<br>en direct, pendant sa fabrication.</div>
+        </div>
+      </div>
+      <div class="status" id="status" role="status"></div>
+      <div class="meter" id="meter" hidden><i id="meterFill"></i></div>
+      <div class="timing" id="timing"></div>
+      <ul class="segs" id="segs"></ul>
+      <a class="dl" id="dl" hidden download>⬇️ Télécharger la vidéo</a>
+    </aside>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const dropEl = $("drop"), fileInput = $("file"), pickedEl = $("picked");
+const statusEl = $("status"), meterEl = $("meter"), fillEl = $("meterFill");
+const timingEl = $("timing"), segsEl = $("segs"), dlEl = $("dl");
+const phoneEl = $("phone"), idleEl = $("idle"), goBtn = $("go");
+
+let currentFile = null;
+let busy = false;
+
+/* ---------- sélection du fichier ---------- */
+dropEl.addEventListener("click", () => fileInput.click());
+dropEl.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") fileInput.click(); });
+dropEl.addEventListener("dragover", e => { e.preventDefault(); dropEl.classList.add("over"); });
+dropEl.addEventListener("dragleave", () => dropEl.classList.remove("over"));
+dropEl.addEventListener("drop", e => {
+  e.preventDefault(); dropEl.classList.remove("over");
+  if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", () => { if (fileInput.files.length) setFile(fileInput.files[0]); });
+
+function setFile(f) {
+  currentFile = f;
+  pickedEl.textContent = f.name + " (" + (f.size / 1048576).toFixed(1) + " Mo)";
+  setStatus("");
+}
+
+function setStatus(msg, isError) {
+  statusEl.textContent = msg;
+  statusEl.classList.toggle("error", !!isError);
+}
+
+/* ---------- analyse audio : énergie RMS par fenêtre de 0,5 s ---------- */
+const WIN = 0.5;
+
+async function rmsProfile(file) {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ac = new AC();
+  try {
+    const buf = await ac.decodeAudioData(await file.arrayBuffer());
+    const n = buf.length, ch = buf.numberOfChannels;
+    const win = Math.floor(WIN * buf.sampleRate);
+    const data = [];
+    for (let c = 0; c < ch; c++) data.push(buf.getChannelData(c));
+    const rms = [];
+    for (let i = 0; i + win <= n; i += win) {
+      let acc = 0;
+      for (let j = i; j < i + win; j++) {
+        let s = 0;
+        for (let c = 0; c < ch; c++) s += data[c][j];
+        s /= ch;
+        acc += s * s;
+      }
+      rms.push(Math.sqrt(acc / win));
+    }
+    // lissage (moyenne glissante sur 3)
+    if (rms.length >= 3) {
+      const sm = [rms[0]];
+      for (let i = 1; i < rms.length - 1; i++) sm.push((rms[i-1] + rms[i] + rms[i+1]) / 3);
+      sm.push(rms[rms.length - 1]);
+      return sm;
+    }
+    return rms;
+  } catch (e) {
+    return []; // pas d'audio exploitable
+  } finally {
+    ac.close();
+  }
+}
+
+/* ---------- sélection des temps forts ---------- */
+function pickSegments(rms, dur, target, pre = 2.5, post = 3.5) {
+  if (dur <= target + 2) return [[0, dur]];
+  const segLen = pre + post;
+  if (!rms.length || Math.max(...rms) <= 0) {
+    const count = Math.max(1, Math.floor(target / segLen));
+    const step = dur / count, out = [];
+    for (let i = 0; i < count; i++) {
+      const c = i * step + step / 2;
+      out.push([Math.max(0, c - pre), Math.min(dur, c + post)]);
+    }
+    return out;
+  }
+  const sorted = [...rms].sort((a, b) => a - b);
+  const med = sorted[Math.floor(sorted.length / 2)];
+  const scores = [...rms], picked = [];
+  let budget = target;
+  while (budget > 1) {
+    let idx = 0;
+    for (let i = 1; i < scores.length; i++) if (scores[i] > scores[idx]) idx = i;
+    if (scores[idx] <= 0 || (picked.length && med > 0 && scores[idx] < 1.1 * med)) break;
+    const t = idx * WIN + WIN / 2;
+    const s = Math.max(0, t - pre), e = Math.min(dur, t + post);
+    const z0 = Math.max(0, Math.floor((s - 3) / WIN));
+    const z1 = Math.min(scores.length, Math.floor((e + 3) / WIN) + 1);
+    for (let j = z0; j < z1; j++) scores[j] = 0;
+    picked.push([s, e]);
+    budget -= e - s;
+  }
+  picked.sort((a, b) => a[0] - b[0]);
+  const merged = [];
+  for (const seg of picked) {
+    const last = merged[merged.length - 1];
+    if (last && seg[0] <= last[1] + 0.25) last[1] = Math.max(last[1], seg[1]);
+    else merged.push([...seg]);
+  }
+  let total = 0;
+  const fin = [];
+  for (let [s, e] of merged) {
+    if (total >= target) break;
+    if (total + (e - s) > target) e = s + (target - total);
+    if (e - s >= 0.8) { fin.push([s, e]); total += e - s; }
+  }
+  return fin.length ? fin : [[0, Math.min(dur, target)]];
+}
+
+/* ---------- rendu ---------- */
+function pickMime() {
+  const candidates = [
+    'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+    "video/mp4",
+    'video/webm;codecs="vp9,opus"',
+    'video/webm;codecs="vp8,opus"',
+    "video/webm",
+  ];
+  for (const m of candidates) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m;
+  }
+  return "";
+}
+
+function once(el, ev) { return new Promise(r => el.addEventListener(ev, r, { once: true })); }
+const fmt = t => t.toFixed(1) + "s";
+
+function drawCover(ctx, video, w, h) {
+  const vr = video.videoWidth / video.videoHeight, cr = w / h;
+  let sw, sh;
+  if (vr > cr) { sh = video.videoHeight; sw = sh * cr; }
+  else { sw = video.videoWidth; sh = sw / cr; }
+  const sx = (video.videoWidth - sw) / 2, sy = (video.videoHeight - sh) / 2;
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, w, h);
+}
+
+function drawContain(ctx, video, W, H, zoom) {
+  const vr = video.videoWidth / video.videoHeight, cr = W / H;
+  let dw, dh;
+  if (vr > cr) { dw = W; dh = W / vr; } else { dh = H; dw = H * vr; }
+  dw *= zoom; dh *= zoom;
+  ctx.drawImage(video, (W - dw) / 2, (H - dh) / 2, dw, dh);
+}
+
+function drawTitle(ctx, text, W, H) {
+  const lines = text.split("|").map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return;
+  let size = Math.min(W * 0.085, 92);
+  ctx.textAlign = "center";
+  for (const line of lines) {
+    ctx.font = "900 " + size + "px system-ui, sans-serif";
+    const m = ctx.measureText(line).width;
+    if (m > W * 0.9) size *= (W * 0.9) / m;
+  }
+  ctx.font = "900 " + size + "px system-ui, sans-serif";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = Math.max(6, size / 6.5);
+  ctx.fillStyle = "white";
+  let y = H * 0.15;
+  for (const line of lines) {
+    ctx.strokeText(line, W / 2, y);
+    ctx.fillText(line, W / 2, y);
+    y += size * 1.18;
+  }
+}
+
+function drawHandle(ctx, text, W, H) {
+  const size = Math.round(W * 0.031);
+  ctx.font = "600 " + size + "px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.lineJoin = "round";
+  ctx.globalAlpha = 0.9;
+  ctx.strokeStyle = "black"; ctx.lineWidth = 3;
+  ctx.fillStyle = "white";
+  ctx.strokeText(text, W / 2, H - Math.round(H * 0.07));
+  ctx.fillText(text, W / 2, H - Math.round(H * 0.07));
+  ctx.globalAlpha = 1;
+}
+
+async function renderMontage(file, segments, opts, onProgress) {
+  const url = URL.createObjectURL(file);
+  const video = document.createElement("video");
+  video.src = url;
+  video.playsInline = true;
+  video.preload = "auto";
+  video.crossOrigin = "anonymous";
+  await once(video, "loadedmetadata");
+
+  const W = opts.w, H = opts.h;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  phoneEl.innerHTML = "";
+  phoneEl.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+
+  // flou du fond : on dessine la vidéo en tout petit puis on l'étire
+  const small = document.createElement("canvas");
+  small.width = Math.max(2, Math.round(W / 14));
+  small.height = Math.max(2, Math.round(H / 14));
+  const sctx = small.getContext("2d");
+
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ac = new AC();
+  const dest = ac.createMediaStreamDestination();
+  try {
+    ac.createMediaElementSource(video).connect(dest); // capture le son sans le jouer
+  } catch (e) { /* pas d'audio : piste silencieuse */ }
+
+  const stream = canvas.captureStream(30);
+  dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+  const mime = pickMime();
+  if (!mime) throw new Error("Ton navigateur ne supporte pas l'enregistrement vidéo (MediaRecorder). Essaie Chrome.");
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+  const chunks = [];
+  rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  const stopped = new Promise(r => { rec.onstop = r; });
+
+  const total = segments.reduce((a, [s, e]) => a + (e - s), 0);
+  let segIdx = 0, playedBefore = 0, running = true;
+  const recStart = performance.now();
+
+  function frame() {
+    if (!running) return;
+    if (video.readyState >= 2) {
+      drawCover(sctx, video, small.width, small.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(small, 0, 0, W, H);
+      ctx.fillStyle = "rgba(0,0,0,0.20)";
+      ctx.fillRect(0, 0, W, H);
+      const zoom = (opts.zoom && segIdx % 2 === 1) ? 1.08 : 1;
+      drawContain(ctx, video, W, H, zoom);
+      const elapsed = (performance.now() - recStart) / 1000;
+      if (opts.hook && elapsed < 3.2) drawTitle(ctx, opts.hook, W, H);
+      if (opts.handle) drawHandle(ctx, opts.handle, W, H);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  rec.start(250);
+  requestAnimationFrame(frame);
+
+  for (segIdx = 0; segIdx < segments.length; segIdx++) {
+    const [s, e] = segments[segIdx];
+    video.currentTime = s;
+    await once(video, "seeked");
+    await video.play();
+    await new Promise(res => {
+      const iv = setInterval(() => {
+        const done = video.currentTime >= e || video.ended;
+        onProgress(Math.min(1, (playedBefore + Math.max(0, video.currentTime - s)) / total));
+        if (done) { clearInterval(iv); video.pause(); res(); }
+      }, 40);
+    });
+    playedBefore += e - s;
+  }
+
+  running = false;
+  rec.stop();
+  await stopped;
+  ac.close();
+  URL.revokeObjectURL(url);
+  return { blob: new Blob(chunks, { type: mime.split(";")[0] }), mime };
+}
+
+/* ---------- orchestration ---------- */
+goBtn.addEventListener("click", async () => {
+  if (busy) return;
+  if (!currentFile) { setStatus("Choisis d'abord une vidéo !", true); return; }
+  busy = true;
+  goBtn.disabled = true;
+  dlEl.hidden = true;
+  segsEl.innerHTML = "";
+  timingEl.textContent = "";
+  meterEl.hidden = false;
+  fillEl.style.width = "0%";
+
+  try {
+    setStatus("🔊 Analyse du son (recherche des temps forts)…");
+    const rms = await rmsProfile(currentFile);
+
+    // durée réelle de la vidéo
+    const probe = document.createElement("video");
+    probe.src = URL.createObjectURL(currentFile);
+    await once(probe, "loadedmetadata");
+    const dur = probe.duration;
+    URL.revokeObjectURL(probe.src);
+
+    const target = Math.min(90, Math.max(8, parseFloat($("duration").value) || 25));
+    const segments = pickSegments(rms, dur, target);
+    segsEl.innerHTML = segments.map(([s, e], i) =>
+      "<li><span>Temps fort " + (i + 1) + "</span><b>" + fmt(s) + " → " + fmt(e) + "</b></li>").join("");
+    if (!rms.length) setStatus("Pas d'audio exploitable : découpage régulier. 🎬 Montage en cours…");
+    else setStatus("🎬 " + segments.length + " temps fort(s) détecté(s). Montage en direct →");
+
+    const q = $("quality").value === "1080" ? { w: 1080, h: 1920 } : { w: 720, h: 1280 };
+    const t0 = performance.now();
+    const { blob, mime } = await renderMontage(currentFile, segments, {
+      ...q,
+      hook: $("hook").value.trim().toUpperCase(),
+      handle: $("handle").value.trim(),
+      zoom: $("zoom").checked,
+    }, p => {
+      fillEl.style.width = Math.round(p * 100) + "%";
+      timingEl.textContent = "rendu " + Math.round(p * 100) + " % · " +
+        ((performance.now() - t0) / 1000).toFixed(0) + "s écoulées";
+    });
+
+    fillEl.style.width = "100%";
+    const outUrl = URL.createObjectURL(blob);
+    const preview = document.createElement("video");
+    preview.src = outUrl;
+    preview.controls = true;
+    preview.playsInline = true;
+    phoneEl.innerHTML = "";
+    phoneEl.appendChild(preview);
+    const ext = mime.includes("mp4") ? "mp4" : "webm";
+    dlEl.href = outUrl;
+    dlEl.download = "viralcut_tiktok." + ext;
+    dlEl.hidden = false;
+    setStatus("✅ Montage terminé (" + (blob.size / 1048576).toFixed(1) + " Mo, ." + ext + "). " +
+      (ext === "webm" ? "TikTok accepte le .webm — sinon convertis-le en .mp4." : "Prêt à poster !"));
+    document.body.dataset.state = "done";
+  } catch (err) {
+    setStatus("Erreur : " + (err && err.message ? err.message : err), true);
+    document.body.dataset.state = "error";
+  } finally {
+    busy = false;
+    goBtn.disabled = false;
+    meterEl.hidden = true;
+  }
+});
+</script>
