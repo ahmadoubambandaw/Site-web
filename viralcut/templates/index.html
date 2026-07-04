@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ViralCut ⚽ — Montage TikTok automatique</title>
+<style>
+  :root {
+    --bg: #0b0f1a; --card: #131a2b; --card2: #1a2338;
+    --accent: #22d36b; --accent2: #10a5f5;
+    --text: #eef2ff; --muted: #8a94b0; --danger: #ff5470;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 80% -10%, #14304a 0%, var(--bg) 55%);
+    color: var(--text); min-height: 100vh;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .card {
+    width: 100%; max-width: 560px; background: var(--card);
+    border: 1px solid #232e4a; border-radius: 20px; padding: 32px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.45);
+  }
+  h1 { font-size: 26px; margin-bottom: 4px; }
+  h1 .accent { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .drop {
+    border: 2px dashed #2c3a5e; border-radius: 16px; padding: 34px 20px;
+    text-align: center; cursor: pointer; transition: .2s; background: var(--card2);
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); background: #182541; }
+  .drop .big { font-size: 34px; }
+  .drop p { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .drop .file-name { color: var(--accent); font-weight: 600; margin-top: 8px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 18px 0 6px; }
+  input[type=text], input[type=number] {
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid #2c3a5e; background: var(--card2); color: var(--text);
+    font-size: 15px; outline: none;
+  }
+  input[type=text]:focus { border-color: var(--accent2); }
+  .row { display: flex; gap: 14px; }
+  .row > div { flex: 1; }
+  .toggle { display: flex; align-items: center; gap: 10px; margin-top: 18px;
+            font-size: 14px; color: var(--muted); cursor: pointer; }
+  .toggle input { accent-color: var(--accent); width: 18px; height: 18px; }
+  button {
+    width: 100%; margin-top: 26px; padding: 15px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: #04121f; font-size: 17px; font-weight: 700;
+    border: none; border-radius: 12px; cursor: pointer; transition: .15s;
+  }
+  button:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .status { margin-top: 20px; padding: 14px 16px; border-radius: 12px;
+            background: var(--card2); font-size: 14px; display: none; }
+  .status.show { display: block; }
+  .status.error { border: 1px solid var(--danger); color: var(--danger); }
+  .bar { height: 6px; border-radius: 4px; background: #22304f;
+         overflow: hidden; margin-top: 10px; }
+  .bar i { display: block; height: 100%; width: 30%;
+           background: linear-gradient(90deg, var(--accent), var(--accent2));
+           border-radius: 4px; animation: slide 1.2s ease-in-out infinite; }
+  @keyframes slide { 0% {margin-left: -30%;} 100% {margin-left: 100%;} }
+  a.dl {
+    display: block; text-align: center; margin-top: 14px; padding: 14px;
+    background: var(--accent); color: #04121f; font-weight: 700;
+    border-radius: 12px; text-decoration: none;
+  }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>ViralCut <span class="accent">⚽</span></h1>
+  <p class="sub">Dépose ta vidéo brute → montage TikTok vertical automatique
+     (temps forts, 9:16, texte d'accroche, son normalisé).</p>
+
+  <form id="form">
+    <div class="drop" id="drop">
+      <div class="big">🎬</div>
+      <strong>Glisse ta vidéo ici</strong>
+      <p>ou clique pour choisir (mp4, mov, mkv, webm — max 2 Go)</p>
+      <div class="file-name" id="fileName"></div>
+      <input type="file" id="video" name="video" accept="video/*" hidden>
+    </div>
+
+    <label>Texte d'accroche (hook) — affiché les 3 premières secondes</label>
+    <input type="text" name="hook" id="hook" maxlength="120"
+           placeholder="CE BUT A CHOQUÉ TOUT LE STADE 🤯">
+    <div class="hint">Astuce : utilise | pour un saut de ligne.</div>
+
+    <div class="row">
+      <div>
+        <label>Ton @pseudo (filigrane)</label>
+        <input type="text" name="handle" id="handle" maxlength="40"
+               placeholder="@tonpseudo">
+      </div>
+      <div>
+        <label>Durée cible (sec)</label>
+        <input type="number" name="duration" id="duration" value="30"
+               min="10" max="120">
+      </div>
+    </div>
+
+    <label>Musique de fond (optionnel — mp3, m4a, wav)</label>
+    <input type="file" id="music" name="music" accept="audio/*">
+
+    <label class="toggle">
+      <input type="checkbox" id="zoom" name="zoom" checked>
+      Punch zoom dynamique (recommandé)
+    </label>
+
+    <button type="submit" id="go">🚀 Créer mon montage viral</button>
+  </form>
+
+  <div class="status" id="status">
+    <span id="statusMsg"></span>
+    <div class="bar" id="bar"><i></i></div>
+    <a class="dl" id="dl" href="#" style="display:none">⬇️ Télécharger la vidéo TikTok</a>
+  </div>
+</div>
+
+<script>
+const drop = document.getElementById('drop');
+const videoInput = document.getElementById('video');
+const fileName = document.getElementById('fileName');
+const form = document.getElementById('form');
+const statusBox = document.getElementById('status');
+const statusMsg = document.getElementById('statusMsg');
+const bar = document.getElementById('bar');
+const dl = document.getElementById('dl');
+const go = document.getElementById('go');
+
+drop.addEventListener('click', () => videoInput.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('over');
+  if (e.dataTransfer.files.length) {
+    videoInput.files = e.dataTransfer.files;
+    fileName.textContent = e.dataTransfer.files[0].name;
+  }
+});
+videoInput.addEventListener('change', () => {
+  if (videoInput.files.length) fileName.textContent = videoInput.files[0].name;
+});
+
+function showStatus(msg, isError) {
+  statusBox.classList.add('show');
+  statusBox.classList.toggle('error', !!isError);
+  statusMsg.textContent = msg;
+}
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!videoInput.files.length) { showStatus('Choisis d\'abord une vidéo !', true); return; }
+
+  const fd = new FormData();
+  fd.append('video', videoInput.files[0]);
+  fd.append('hook', document.getElementById('hook').value);
+  fd.append('handle', document.getElementById('handle').value);
+  fd.append('duration', document.getElementById('duration').value);
+  fd.append('zoom', document.getElementById('zoom').checked ? 'on' : 'off');
+  const music = document.getElementById('music');
+  if (music.files.length) fd.append('music', music.files[0]);
+
+  go.disabled = true;
+  dl.style.display = 'none';
+  bar.style.display = 'block';
+  showStatus('Envoi de la vidéo...');
+
+  try {
+    const res = await fetch('/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erreur d\'envoi');
+    poll(data.job);
+  } catch (err) {
+    showStatus(err.message, true);
+    bar.style.display = 'none';
+    go.disabled = false;
+  }
+});
+
+async function poll(job) {
+  try {
+    const res = await fetch('/status/' + job);
+    const data = await res.json();
+    if (data.state === 'done') {
+      showStatus('✅ ' + data.message);
+      bar.style.display = 'none';
+      dl.href = data.download;
+      dl.style.display = 'block';
+      go.disabled = false;
+      return;
+    }
+    if (data.state === 'error') {
+      showStatus(data.message, true);
+      bar.style.display = 'none';
+      go.disabled = false;
+      return;
+    }
+    showStatus('⏳ ' + data.message);
+    setTimeout(() => poll(job), 1500);
+  } catch {
+    setTimeout(() => poll(job), 3000);
+  }
+}
+</script>
+</body>
+</html>
